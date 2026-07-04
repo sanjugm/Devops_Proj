@@ -7,11 +7,7 @@ import org.springframework.boot.system.ApplicationPidFileWriter;
 
 @SpringBootApplication
 public class Application {
-
     public static void main(String[] args) {
-
-        SpringApplicationBuilder app = new SpringApplicationBuilder(Application.class).web(true);
-        app.build().addListeners(new ApplicationPidFileWriter("./bin/shutdown.pid"));
-        app.run();
+        SpringApplication.run(Application.class, args);
     }
 }
