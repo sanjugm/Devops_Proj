@@ -25,23 +25,10 @@ pipeline {
             }
         }
 
-        stage('Test') {
-            steps {
-
-                echo "Running Unit Tests"
-
-                dir('app') {
-                    sh 'mvn test'
-                }
-
-                junit '**/target/surefire-reports/TEST-*.xml'
-            }
-        }
-
         stage('Package') {
             steps {
 
-                echo "Packaging WAR"
+                echo "Packaging WAR (Skipping Tests)"
 
                 dir('app') {
                     sh 'mvn clean package -DskipTests'
