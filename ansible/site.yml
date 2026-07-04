@@ -1,0 +1,73 @@
+---
+- name: Configure Tomcat and Deploy WAR
+  hosts: web
+  become: yes
+
+  vars:
+    tomcat_version: 9.0.108
+    tomcat_home: /opt/tomcat
+
+  tasks:
+
+    - name: Update apt cache
+      apt:
+        update_cache: yes
+
+    - name: Install Java
+      apt:
+        name: openjdk-17-jdk
+        state: present
+
+    - name: Create Tomcat user
+      user:
+        name: tomcat
+        shell: /bin/false
+        home: "{{ tomcat_home }}"
+
+    - name: Download Tomcat
+      get_url:
+        url: "https://archive.apache.org/dist/tomcat/tomcat-9/v{{ tomcat_version }}/bin/apache-tomcat-{{ tomcat_version }}.tar.gz"
+        dest: /tmp/tomcat.tar.gz
+
+    - name: Create Tomcat directory
+      file:
+        path: "{{ tomcat_home }}"
+        state: directory
+
+    - name: Extract Tomcat
+      unarchive:
+        src: /tmp/tomcat.tar.gz
+        dest: "{{ tomcat_home }}"
+        remote_src: yes
+        extra_opts:
+          - --strip-components=1
+
+    - name: Set ownership
+      file:
+        path: "{{ tomcat_home }}"
+        owner: tomcat
+        group: tomcat
+        recurse: yes
+
+    - name: Copy WAR file
+      copy:
+        src: files/devops-e2e-app.war
+        dest: "{{ tomcat_home }}/webapps/devops-e2e-app.war"
+        owner: tomcat
+        group: tomcat
+        mode: '0644'
+
+    - name: Start Tomcat
+      shell: "{{ tomcat_home }}/bin/startup.sh"
+      args:
+        creates: "{{ tomcat_home }}/logs/catalina.out"
+
+    - name: Wait for Tomcat
+      wait_for:
+        port: 8080
+        timeout: 60
+
+    - name: Verify application
+      uri:
+        url: http://localhost:8080/devops-e2e-app/hello
+        status_code: 200
