@@ -1,0 +1,103 @@
+---
+- name: Deploy Spring Boot Application
+  hosts: web
+  become: yes
+
+  vars:
+    app_name: devops-demo-0.3.0.jar
+    app_dir: /opt/devops-demo
+
+  tasks:
+
+    - name: Update apt cache
+      apt:
+        update_cache: yes
+
+    - name: Install Java 11
+      apt:
+        name: openjdk-11-jdk
+        state: present
+
+    - name: Create Tomcat user
+      user:
+        name: tomcat
+        shell: /bin/false
+        home: /opt/tomcat
+
+    - name: Download Tomcat
+      get_url:
+        url: https://archive.apache.org/dist/tomcat/tomcat-9/v9.0.108/bin/apache-tomcat-9.0.108.tar.gz
+        dest: /tmp/tomcat.tar.gz
+
+    - name: Create Tomcat directory
+      file:
+        path: /opt/tomcat
+        state: directory
+
+    - name: Extract Tomcat
+      unarchive:
+        src: /tmp/tomcat.tar.gz
+        dest: /opt/tomcat
+        remote_src: yes
+        extra_opts:
+          - --strip-components=1
+
+    - name: Change Tomcat HTTP port to 8081
+      replace:
+        path: /opt/tomcat/conf/server.xml
+        regexp: 'port="8080"'
+        replace: 'port="8081"'
+
+    - name: Change ownership
+      file:
+        path: /opt/tomcat
+        owner: tomcat
+        group: tomcat
+        recurse: yes
+
+    - name: Start Tomcat
+      shell: /opt/tomcat/bin/startup.sh
+      args:
+        creates: /opt/tomcat/logs/catalina.out
+
+    - name: Create application directory
+      file:
+        path: "{{ app_dir }}"
+        state: directory
+        mode: '0755'
+
+    - name: Copy Spring Boot JAR
+      copy:
+        src: files/{{ app_name }}
+        dest: "{{ app_dir }}/{{ app_name }}"
+        mode: '0755'
+
+    - name: Check if Spring Boot is running
+      shell: pgrep -f "{{ app_name }}"
+      register: springboot_pid
+      failed_when: false
+      changed_when: false
+
+    - name: Wait for port 8080 to stop
+      wait_for:
+        port: 8080
+        state: stopped
+        timeout: 30
+
+    - name: Start Spring Boot application
+      shell: |
+        nohup java -jar {{ app_dir }}/{{ app_name }} > {{ app_dir }}/app.log 2>&1 &
+      args:
+        chdir: "{{ app_dir }}"
+
+    - name: Wait for Spring Boot to start
+      wait_for:
+        port: 8080
+        state: started
+        timeout: 60
+
+    - name: Verify application
+      uri:
+        url: http://localhost:8080/sayhi
+        method: GET
+        status_code: 200
