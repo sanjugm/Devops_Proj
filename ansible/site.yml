@@ -49,6 +49,20 @@
         group: tomcat
         recurse: yes
 
+    - name: Stop Tomcat
+      shell: "{{ tomcat_home }}/bin/shutdown.sh"
+      ignore_errors: yes
+
+    - name: Remove old application
+      file:
+        path: "{{ tomcat_home }}/webapps/devops-e2e-app"
+        state: absent
+
+    - name: Remove old WAR
+      file:
+        path: "{{ tomcat_home }}/webapps/devops-e2e-app.war"
+        state: absent
+
     - name: Copy WAR file
       copy:
         src: files/devops-e2e-app.war
@@ -59,15 +73,17 @@
 
     - name: Start Tomcat
       shell: "{{ tomcat_home }}/bin/startup.sh"
-      args:
-        creates: "{{ tomcat_home }}/logs/catalina.out"
 
     - name: Wait for Tomcat
       wait_for:
         port: 8080
         timeout: 60
 
+    - name: Wait for application deployment
+      pause:
+        seconds: 20
+
     - name: Verify application
       uri:
-        url: http://localhost:8080/devops-e2e-app/hello
+        url: http://localhost:8080/devops-e2e-app/sayhi
         status_code: 200
