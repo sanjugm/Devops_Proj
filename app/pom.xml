@@ -98,7 +98,7 @@
 
     </distributionManagement>
 
-</projectazureuser@vm-devops:~/Devops_Proj/app$ vi pom.xml
+
         </repository>
 
         <repository>
