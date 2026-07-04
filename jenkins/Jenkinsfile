@@ -27,8 +27,7 @@ pipeline {
 
         stage('Package') {
             steps {
-
-                echo "Packaging WAR (Skipping Tests)"
+                echo "Packaging WAR"
 
                 dir('app') {
                     sh 'mvn clean package -DskipTests'
@@ -38,17 +37,40 @@ pipeline {
             }
         }
 
+        stage('Debug') {
+            steps {
+                sh '''
+                echo "Current User:"
+                whoami
+
+                echo "Current Directory:"
+                pwd
+
+                echo "PATH:"
+                echo $PATH
+
+                echo "Ansible Location:"
+                which ansible-playbook
+
+                echo "Ansible Version:"
+                /usr/bin/ansible-playbook --version
+                '''
+            }
+        }
+
         stage('Deploy') {
             steps {
 
                 echo "Deploying Application using Ansible"
 
                 sh '''
+                export PATH=/usr/bin:$PATH
+
                 cp app/target/devops-e2e-app.war ansible/files/
 
-                ansible-playbook \
-                -i ansible/inventory.ini \
-                ansible/site.yml
+                /usr/bin/ansible-playbook \
+                  -i ansible/inventory.ini \
+                  ansible/site.yml
                 '''
             }
         }
