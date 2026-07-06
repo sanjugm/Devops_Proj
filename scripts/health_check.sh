@@ -2,8 +2,7 @@
 
 IP=$1
 
-URL="http://$IP:8080/devops-e2e-app/hello"
-
+URL="http://$1:8080/devops-e2e-app/sayhi"
 echo "Checking $URL"
 
 STATUS=$(curl -s -o /dev/null -w "%{http_code}" $URL)
