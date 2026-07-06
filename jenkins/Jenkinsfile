@@ -83,7 +83,7 @@ pipeline {
                 sh '''
                 chmod +x scripts/health_check.sh
 
-                ./scripts/health_check.sh 40.81.24.106
+                ./scripts/health_check.sh 20.189.126.217
                 '''
             }
         }
