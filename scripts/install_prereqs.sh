@@ -8,7 +8,7 @@ sudo apt update
 
 echo "Installing Java..."
 
-sudo apt install -y openjdk-17-jdk
+sudo apt install -y openjdk-11-jdk
 
 echo "Installing Maven..."
 
